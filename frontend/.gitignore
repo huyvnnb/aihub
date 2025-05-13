@@ -1,0 +1,57 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+openapi.json
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# node_modules là thư mục chứa các phụ thuộc của dự án, không cần phải theo dõi
+node_modules/
+
+# Các file cấu hình của hệ thống phát triển (IDE)
+.idea/
+
+# Các tệp tạm thời của trình biên dịch (build tools) như Webpack, Babel...
+dist/
+build/
+
+
+# Tệp cấu hình môi trường
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Các tệp của hệ thống Windows
+Thumbs.db
+ehthumbs.db
+
+# Cache của các công cụ như Vite, Parcel, Next.js, Webpack
+.vscode/
+.cache/
+.next/
