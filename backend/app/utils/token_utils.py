@@ -1,3 +1,5 @@
+import secrets
+import string
 from datetime import timedelta, datetime, timezone
 
 import jwt
@@ -28,3 +30,9 @@ def verify_password_reset_token(token: str) -> str | None:
         return str(decoded_token["sub"])
     except InvalidTokenError:
         return None
+
+
+def generate_token(length: int = 8) -> str:
+    characters = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(characters) for _ in range(length))
+

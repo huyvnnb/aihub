@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from typing import Optional, List, TYPE_CHECKING
-from uuid import UUID, uuid4
+from uuid import UUID
 from sqlmodel import Field, Relationship
 from pydantic import EmailStr
 

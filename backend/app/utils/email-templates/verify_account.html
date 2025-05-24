@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ subject }}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #3d4852;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+
+    .email-container {
+      width: 100%;
+      padding: 0;
+      margin: 0;
+    }
+
+    .email-wrapper {
+      max-width: 570px;
+      margin: 20px auto;
+      padding: 35px;
+      background-color: #ffffff;
+      border: 1px solid #e8e5ef;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      text-align: left; /* Important: ensures all inner content is left-aligned */
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #2d3748;
+      margin: 0;
+    }
+
+    p {
+      font-size: 16px;
+      color: #3d4852;
+      margin-top: 0;
+      margin-bottom: 1em;
+    }
+
+    .token-section {
+      margin: 30px 0;
+    }
+
+    .token-label {
+      font-size: 15px;
+      color: #718096;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .token-display {
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+      font-size: 26px;
+      font-weight: 700;
+      color: #ffffff;
+      background-color: #3490dc;
+      padding: 12px 25px;
+      border-radius: 6px;
+      display: inline-block;
+      letter-spacing: 1.5px;
+      border: 1px solid #2779bd;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .button-container {
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }
+
+    .button {
+      display: inline-block;
+      background-color: #38c172;
+      color: #ffffff !important;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 14px 30px;
+      border-radius: 6px;
+      border: none;
+      transition: background-color 0.2s ease-in-out;
+    }
+
+    .button:hover {
+      background-color: #2f9e5f;
+    }
+
+    .footer {
+      margin-top: 30px;
+      padding-top: 15px;
+      border-top: 1px solid #e8e5ef;
+      text-align: center;
+    }
+
+    .footer p {
+      font-size: 13px;
+      color: #718096;
+    }
+
+    @media only screen and (max-width: 600px) {
+      .email-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0;
+        padding: 20px;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .token-display {
+        font-size: 22px;
+        padding: 10px 20px;
+      }
+
+      .button {
+        padding: 12px 25px;
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <table class="email-container" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+      <td align="center">
+        <div class="email-wrapper">
+          <div class="header">
+            <div class="header">
+              <img src="{{ website_url }}/static/images/aihub.png" alt="Logo" style="max-height: 50px; margin-bottom: 15px;" />
+            </div>
+          </div>
+
+          <p>You recently requested a verification token for your account <span style="font-weight: bold; color: #d35400; text-decoration: none;">{{ user_email_placeholder }}</span>.</p>
+
+          <div class="token-section">
+            <span class="token-label">Your verification token is:</span>
+            <div class="token-display">{{ token }}</div>
+          </div>
+
+          <p>This token is valid for a limited time. Please use it promptly to complete your verification process. If you did not make this request, you can safely ignore this message.</p>
+
+          <div class="button-container">
+            <a href="{{ website_url | default('#') }}" class="button" target="_blank">Visit Our Website</a>
+          </div>
+
+          <div class="footer">
+            <p>© {{ current_year | default('2024') }} {{ app_name | default('Your Company') }}. All rights reserved.</p>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
