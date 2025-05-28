@@ -6,7 +6,7 @@ from app.services.role_service import RoleService
 
 router = APIRouter(
     prefix="/role",
-    tags=["role"]
+    tags=["Role"]
 )
 
 
