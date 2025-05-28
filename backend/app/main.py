@@ -1,3 +1,4 @@
+import logging
 
 import sentry_sdk
 from fastapi import FastAPI, HTTPException
@@ -8,6 +9,9 @@ from starlette.staticfiles import StaticFiles
 from app.api.main import api_router
 from app.core.config import settings
 from app.utils.handlers import http_exception_handler, general_exception_handler
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("uvicorn")
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -22,6 +26,11 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     generate_unique_id_function=custom_generate_unique_id,
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Docs: http://127.0.0.1:8000/docs")
 
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)

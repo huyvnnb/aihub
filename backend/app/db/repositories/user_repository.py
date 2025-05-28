@@ -2,11 +2,11 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import Depends
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.api.deps import SessionDep, get_db
-from app.db.models import User
-from app.schemas.user_schema import UserCreate
+from app.db.models import User, Role
 
 
 class UserRepository:
@@ -31,9 +31,20 @@ class UserRepository:
         self.db.refresh(user)
         return user
 
-    def get_all_users(self):
-        statement = select(User).where(User.deleted == False)
-        return self.db.exec(statement).all()
+    def get_all_users(self, offset: int, size: int):
+        statement = (
+            select(User)
+            .join(Role)
+            .where(User.deleted.is_(False))
+            .offset(offset)
+            .limit(size)
+        )
+
+        users = self.db.exec(statement).all()
+        count_stmt = select(func.count()).select_from(User).where(User.deleted == False)
+        total_items = self.db.exec(count_stmt).one()
+
+        return users, total_items
 
 
 def get_user_repo(db: Session = Depends(get_db)) -> UserRepository:
