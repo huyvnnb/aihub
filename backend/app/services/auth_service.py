@@ -8,6 +8,7 @@ from app.db.models import User
 from app.db.repositories.role_repository import RoleRepository, get_role_repo
 from app.db.repositories.user_repository import UserRepository, get_user_repo
 from app.schemas.user_schema import UserCreate
+from app.utils import messages
 from app.utils.constants import DEFAULT_ROLE
 from app.utils.email_service import send_email
 from app.utils.enums import EmailType
@@ -23,20 +24,20 @@ class AuthService:
         self.user_repo = user_repo
         self.role_repo = role_repo
 
-    def register(self, user_in: UserCreate, background_tasks: BackgroundTasks):
+    def register(self, user_in: UserCreate, background_tasks: BackgroundTasks) -> None:
         existing_user = self.user_repo.get_user_by_email(user_in.email)
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already existed"
+                detail=messages.User.EMAIL_ALREADY_EXISTS
             )
         user_data = user_in.model_dump(exclude={"password"})
         password_hash = get_password_hash(user_in.password)
         existing_role = self.role_repo.get_role_by_name(DEFAULT_ROLE)
         if not existing_role:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Role {DEFAULT_ROLE} not exist"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=messages.Role.ROLE_NOT_FOUND
             )
         token = generate_token()
         hashed_token = get_token_hash(token)
@@ -62,6 +63,6 @@ class AuthService:
         background_tasks.add_task(
             send_email, user.email, subject, EmailType.VERIFY_ACCOUNT.value, email_context
         )
-        return self.user_repo.create(user)
+        self.user_repo.create(user)
 
 

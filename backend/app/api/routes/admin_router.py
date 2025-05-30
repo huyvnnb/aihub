@@ -7,6 +7,7 @@ from starlette import status
 from app.schemas.response_schema import ModelResponse, PaginationParams
 from app.schemas.user_schema import UserResponse
 from app.services.admin_service import AdminService
+from app.utils import messages
 
 router = APIRouter(
     prefix="/admin",
@@ -22,7 +23,7 @@ router = APIRouter(
 async def get_user(id: UUID, admin_service: AdminService = Depends(AdminService)):
     user = admin_service.get_user(id=id)
     return ModelResponse(
-        message="Fetch user successfully",
+        message=messages.Admin.FETCH_USER,
         data=user
     )
 
@@ -38,7 +39,7 @@ async def get_all_users(pagination: PaginationParams = Depends(), admin_service:
     response = admin_service.get_all_users(page, size)
 
     return ModelResponse(
-        message="Fetch users list successfully",
+        message=messages.Admin.FETCH_USER_LIST,
         data=response.data,
         meta=response.meta
     )
