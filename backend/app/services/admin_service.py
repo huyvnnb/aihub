@@ -8,7 +8,7 @@ from app.db.repositories.role_repository import RoleRepository, get_role_repo
 from app.db.repositories.user_repository import UserRepository, get_user_repo
 from app.schemas.response_schema import PaginationMeta, Pagination
 from app.schemas.user_schema import UserResponse
-
+from app.utils import messages
 
 
 class AdminService:
@@ -24,13 +24,13 @@ class AdminService:
         if not existing_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not exist"
+                detail=messages.User.USER_NOT_FOUND
             )
         role = self.role_repo.get_role(existing_user.role_id)
         if not role:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Role not exist"
+                detail=messages.Role.ROLE_NOT_FOUND
             )
 
         user_data = {
@@ -66,5 +66,3 @@ class AdminService:
         )
 
         return response
-
-        

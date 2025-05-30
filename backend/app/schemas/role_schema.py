@@ -12,5 +12,10 @@ class RoleResponse(BaseModel):
     name: str
     desc: Optional[str] = None
 
+    model_config = {
+        "exclude_none": True,
+        "from_attributes": True
+    }
+
 
 
