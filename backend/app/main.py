@@ -9,9 +9,9 @@ from starlette.staticfiles import StaticFiles
 from app.api.main import api_router
 from app.core.config import settings
 from app.utils.handlers import http_exception_handler, general_exception_handler
+from app.utils.logger import get_logger, Module
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("uvicorn")
+logger = get_logger(Module.APP)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:

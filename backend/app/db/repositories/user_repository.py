@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from uuid import UUID
 
@@ -7,6 +8,9 @@ from sqlmodel import Session, select
 
 from app.api.deps import SessionDep, get_db
 from app.db.models import User, Role
+from app.utils.logger import get_logger
+
+logger = get_logger("user_repo")
 
 
 class UserRepository:
@@ -39,6 +43,8 @@ class UserRepository:
             .offset(offset)
             .limit(size)
         )
+
+        logger.info("STATEMENT: %s", str(statement))
 
         users = self.db.exec(statement).all()
         count_stmt = select(func.count()).select_from(User).where(User.deleted == False)
