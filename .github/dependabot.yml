@@ -28,6 +28,7 @@ updates:
       - /frontend
     schedule:
       interval: weekly
+    target-branch: "dev"
     commit-message:
       prefix: ⬆
   # Docker Compose
