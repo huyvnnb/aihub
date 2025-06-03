@@ -32,3 +32,6 @@ class Module(str, Enum):
     ROLE_REPO = "ROLE_REPO"
     ROLE_SERVICE = "ROLE_SERVICE"
     ROLE_ROUTER = "ROLE_ROUTER"
+
+    # Util
+    TOKEN_UTIL = "TOKEN"
