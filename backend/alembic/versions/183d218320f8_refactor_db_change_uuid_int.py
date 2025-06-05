@@ -176,7 +176,6 @@ def upgrade() -> None:
     # ### end Alembic commands ###
 
 
-# This action is impossible to downgrade
 def downgrade() -> None:
 
     print("This action is impossible to downgrade")

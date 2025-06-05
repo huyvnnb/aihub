@@ -10,6 +10,7 @@ from app.core import security
 from app.core.config import settings
 from app.utils.enums import Module
 from app.utils.logger import get_logger
+from fastapi import Request
 
 logger = get_logger(Module.TOKEN_UTIL)
 
@@ -56,3 +57,11 @@ def generate_token(length: int = 8) -> str:
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
 
+
+def get_client_meta(request: Request):
+    x_forwarded_for = request.headers.get("X-Forwarded-For")
+    ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else request.client.host
+
+    user_agent = request.headers.get("User-Agent")
+
+    return ip, user_agent

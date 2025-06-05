@@ -28,3 +28,7 @@ def get_password_hash(password: str) -> str:
 
 def get_token_hash(token: str) -> str:
     return pwd_context.hash(token)
+
+
+def verify_token(plain_token: str, hashed_token: str) -> bool:
+    return pwd_context.verify(plain_token, hashed_token)

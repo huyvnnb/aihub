@@ -48,6 +48,7 @@ class User:
     LIST_FETCHED_SUCCESS = "List of users retrieved successfully."
     USER_NOT_FOUND = "User not found."
     EMAIL_ALREADY_EXISTS = "This email address is already in use by another account."
+    EMAIL_NOT_EXISTS = "Account does not exist. Please check your email or register a new account."
     USERNAME_ALREADY_EXISTS = "This username is already taken. Please choose another one."
     PASSWORD_CHANGE_SUCCESS = "Password changed successfully."
     CURRENT_PASSWORD_INVALID = "The current password you entered is incorrect."

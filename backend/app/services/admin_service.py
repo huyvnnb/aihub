@@ -6,7 +6,7 @@ from starlette import status
 
 from app.db.repositories.role_repository import RoleRepository, get_role_repo
 from app.db.repositories.user_repository import UserRepository, get_user_repo
-from app.schemas.response_schema import PaginationMeta, Pagination
+from app.schemas.response_schema import PaginationMeta, Pagination, PaginationParams
 from app.schemas.user_schema import UserResponse
 from app.utils import messages
 
@@ -50,8 +50,10 @@ class AdminService:
         response = UserResponse.model_validate(user_data)
         return response
 
-    def get_all_users(self, page: int, size: int) -> Pagination[List[UserResponse]]:
-        offset = (page - 1) * size
+    def get_all_users(self, params: PaginationParams) -> Pagination[List[UserResponse]]:
+        offset = params.offset
+        size = params.size
+        page = params.page
         users, total_items = self.user_repo.get_all_users(offset, size)
 
         user_responses = [UserResponse.from_orm(user) for user in users]

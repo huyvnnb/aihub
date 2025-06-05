@@ -21,7 +21,7 @@ class RoleRepository:
         self.db.refresh(role)
         return role
 
-    def get_role(self, role_id: UUID):
+    def get_role(self, role_id: int):
         statement = select(Role).where(Role.id == role_id)
         return self.db.exec(statement).first()
 

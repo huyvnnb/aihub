@@ -35,6 +35,13 @@ class PaginationParams(BaseModel):
     def offset(self):
         return (self.page - 1) * self.size
 
+# Redundant class
+# class Page:
+#     def __init__(self, params: PaginationParams):
+#         self.page = params.page
+#         self.size = params.size
+#         self.offset = params.offset
+
 
 class PaginationMeta(BaseModel):
     page: int = Field(..., ge=1)

@@ -33,10 +33,8 @@ async def get_user(id: UUID, admin_service: AdminService = Depends(AdminService)
             response_model=ModelResponse[List[UserResponse]],
             response_model_exclude_none=True
             )
-async def get_all_users(pagination: PaginationParams = Depends(), admin_service: AdminService = Depends()):
-    page = pagination.page
-    size = pagination.size
-    response = admin_service.get_all_users(page, size)
+async def get_all_users(params: PaginationParams = Depends(), admin_service: AdminService = Depends()):
+    response = admin_service.get_all_users(params)
 
     return ModelResponse(
         message=messages.Admin.FETCH_USER_LIST,

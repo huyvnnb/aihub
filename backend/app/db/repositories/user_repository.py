@@ -52,6 +52,10 @@ class UserRepository:
 
         return users, total_items
 
+    def update(self, user: User):
+        self.db.commit()
+        self.db.refresh(user)
+
 
 def get_user_repo(db: Session = Depends(get_db)) -> UserRepository:
     return UserRepository(db=db)

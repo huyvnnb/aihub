@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRES: int = 2592000
     REFRESH_TOKEN_SECRET: str
 
+    VERIFY_TOKEN_EXPIRES: int = 600
+    PASSWORD_RESET_TOKEN_EXPIRES: int = 600
+
     FRONTEND_HOST: str = "http://localhost:5173"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 

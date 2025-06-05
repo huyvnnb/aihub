@@ -3,16 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <title>{{ subject }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
       line-height: 1.6;
-      color: #3d4852;
-      background-color: #f8fafc;
+      color: #333333;
+      background-color: #f9f9f9;
       margin: 0;
       padding: 0;
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
     }
 
     .email-container {
@@ -22,107 +21,111 @@
     }
 
     .email-wrapper {
-      max-width: 570px;
+      max-width: 550px;
       margin: 20px auto;
-      padding: 35px;
+      padding: 40px;
       background-color: #ffffff;
-      border: 1px solid #e8e5ef;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      text-align: left; /* Important: ensures all inner content is left-aligned */
+      border-radius: 12px;
+      text-align: left;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .logo img {
+      height: 42px;
+    }
+
+    .header {
+      margin-bottom: 25px;
     }
 
     .header h1 {
       font-size: 22px;
       font-weight: 600;
-      color: #2d3748;
-      margin: 0;
+      color: #222222;
+      margin: 0 0 5px 0;
     }
 
     p {
-      font-size: 16px;
-      color: #3d4852;
-      margin-top: 0;
-      margin-bottom: 1em;
+      font-size: 15px;
+      color: #444444;
+      margin: 0 0 20px 0;
     }
 
-    .token-section {
+    .token-container {
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 25px;
       margin: 30px 0;
+      text-align: center;
     }
 
     .token-label {
-      font-size: 15px;
-      color: #718096;
-      margin-bottom: 8px;
+      font-size: 14px;
+      color: #666666;
+      margin-bottom: 10px;
       display: block;
     }
 
-    .token-display {
-      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    .token {
+      font-family: 'Montserrat', monospace;
       font-size: 26px;
-      font-weight: 700;
-      color: #ffffff;
-      background-color: #3490dc;
-      padding: 12px 25px;
-      border-radius: 6px;
-      display: inline-block;
-      letter-spacing: 1.5px;
-      border: 1px solid #2779bd;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .button-container {
-      margin-top: 30px;
-      margin-bottom: 15px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: #222222;
     }
 
     .button {
       display: inline-block;
-      background-color: #38c172;
+      background-color: #222222;
       color: #ffffff !important;
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 15px;
+      font-weight: 500;
       text-decoration: none;
-      padding: 14px 30px;
+      padding: 12px 24px;
       border-radius: 6px;
-      border: none;
-      transition: background-color 0.2s ease-in-out;
-    }
+      margin: 20px auto;
+      transition: all 0.1s ease;
+      text-align: center;
+      border: 2px solid transparent;
+}
 
     .button:hover {
-      background-color: #2f9e5f;
+      background-color: #ffffff;
+      color: #222222 !important;
+      border: 2px solid #222222;
+    }
+
+    .divider {
+      height: 1px;
+      background: #eeeeee;
+      margin: 30px 0;
     }
 
     .footer {
-      margin-top: 30px;
-      padding-top: 15px;
-      border-top: 1px solid #e8e5ef;
-      text-align: center;
-    }
-
-    .footer p {
       font-size: 13px;
-      color: #718096;
+      color: #999999;
+      text-align: center;
     }
 
     @media only screen and (max-width: 600px) {
       .email-wrapper {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0;
-        padding: 20px;
+        padding: 30px;
         border-radius: 0;
         box-shadow: none;
       }
 
-      .token-display {
+      .token {
         font-size: 22px;
-        padding: 10px 20px;
       }
 
       .button {
-        padding: 12px 25px;
-        font-size: 15px;
+        display: block;
+        text-align: center;
       }
     }
   </style>
@@ -132,28 +135,23 @@
     <tr>
       <td align="center">
         <div class="email-wrapper">
+          <div class="logo">
+            <img src="{{ website_url }}/static/images/aihub.png" alt="Logo" />
+          </div>
+
           <div class="header">
-            <div class="header">
-              <img src="{{ website_url }}/static/images/aihub.png" alt="Logo" style="max-height: 50px; margin-bottom: 15px;" />
-            </div>
+            <h1>Xác minh tài khoản của bạn</h1>
+            <p>Bạn vừa yêu cầu mã xác minh cho tài khoản <strong>{{ user_email_placeholder }}</strong>.</p>
           </div>
 
-          <p>You recently requested a verification token for your account <span style="font-weight: bold; color: #d35400; text-decoration: none;">{{ user_email_placeholder }}</span>.</p>
-
-          <div class="token-section">
-            <span class="token-label">Your verification token is:</span>
-            <div class="token-display">{{ token }}</div>
+          <div class="token-container">
+            <span class="token-label">Mã xác minh của bạn</span>
+            <div class="token">{{ token }}</div>
           </div>
 
-          <p>This token is valid for a limited time. Please use it promptly to complete your verification process. If you did not make this request, you can safely ignore this message.</p>
-
-          <div class="button-container">
-            <a href="{{ website_url | default('#') }}" class="button" target="_blank">Visit Our Website</a>
-          </div>
-
-          <div class="footer">
-            <p>© {{ current_year | default('2024') }} {{ app_name | default('Your Company') }}. All rights reserved.</p>
-          </div>
+          <p>Vui lòng sử dụng mã này để hoàn tất quá trình xác minh. Mã có hiệu lực trong 15 phút.</p>
+          <p style="color: #888;">Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này hoặc liên hệ với bộ phận hỗ trợ.</p>
+		  <a href="{{ website_url }}" class="button" target="_blank">Truy cập Website</a>
         </div>
       </td>
     </tr>
