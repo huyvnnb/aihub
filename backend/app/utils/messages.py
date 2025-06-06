@@ -74,6 +74,20 @@ class Role:
     DEFAULT_ROLE_MODIFICATION_RESTRICTED = "Default roles cannot be modified or deleted."
 
 
+# -- Permission Module Messages --
+class Permission:
+    CREATED_SUCCESS = "Permission '{permission_name}' created successfully."
+    UPDATED_SUCCESS = "Permission '{permission_name}' updated successfully."
+    DELETED_SUCCESS = "Permission '{permission_name}' deleted successfully."
+    FETCHED_SUCCESS = "Permission details retrieved successfully."
+    LIST_FETCHED_SUCCESS = "List of permissions retrieved successfully."
+    PERMISSION_NOT_FOUND = "Permission not found."
+    PERMISSION_ALREADY_EXISTS = "A permission with the name '{permission_name}' already exists."
+    PERMISSION_IN_USE = "Cannot delete permission '{permission_name}' as it is currently assigned to one or more roles."
+    INVALID_PERMISSION_DATA = "Invalid data provided for permission '{permission_name}'."
+    DEFAULT_PERMISSION_MODIFICATION_RESTRICTED = "Default permissions cannot be modified or deleted."
+
+
 # --- Admin Module Messages (Actions performed by an Admin, often on other entities) ---
 class Admin:
     FETCH_USER = "Fetch user successfully."
@@ -92,6 +106,14 @@ class Admin:
     SYSTEM_HEALTH_OK = "System health check passed. All services are operational."
     SYSTEM_HEALTH_WARNING = "System health check has warnings. Please review."
     SYSTEM_HEALTH_CRITICAL = "System health check critical. Immediate attention required."
+
+
+class DatabaseError:
+    INTEGRITY_ERROR = "Integrity constraint violated: {detail}"
+    CONNECTION_ERROR = "Database connection error: {detail}"
+    TIMEOUT_ERROR = "Timeout while accessing the database."
+    DATA_ERROR = "Invalid data input: {detail}"
+    OPERATIONAL_ERROR = "Operational error in database: {detail}"
 
 
 # --- Generic placeholders / Helper functions ---
