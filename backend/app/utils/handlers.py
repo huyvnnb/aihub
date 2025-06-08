@@ -24,25 +24,29 @@ logger = get_logger(Module.EXCEPTION)
 
 # --- HANDLER CHO CÁC LỖI TÙY CHỈNH (CUSTOM EXCEPTIONS) ---
 
-async def not_found_error_handler(request: Request, exc: NotFoundError) -> JSONResponse:
-    """Xử lý lỗi NotFoundError tùy chỉnh, trả về 404."""
+def _create_error_json_response(status_code: int, code: str, message: str, details: list[ErrorDetail] | None = None) -> JSONResponse:
     error_response = ModelResponse(
         success=False,
-        error=ErrorResponse(
-            code="HTTP_404_NOT_FOUND",
-            message=exc.message,
-            details=[
-                ErrorDetail(
-                    loc=[exc.entity_name, str(exc.entity_id)],
-                    msg=exc.message,
-                    type="not_found_error",
-                )
-            ],
-        ),
+        error=ErrorResponse(code=code, details=details)
     )
     return JSONResponse(
+        status_code=status_code,
+        content=error_response.model_dump(exclude_none=True)
+    )
+
+
+async def not_found_error_handler(request: Request, exc: NotFoundError) -> JSONResponse:
+    return _create_error_json_response(
         status_code=status.HTTP_404_NOT_FOUND,
-        content=error_response.model_dump(exclude_none=True),
+        code="HTTP_404_NOT_FOUND",
+        message=exc.message,
+        details=[
+            ErrorDetail(
+                loc=[exc.entity_name, str(exc.entity_id)],
+                msg=exc.message,
+                type="not_found_error",
+            )
+        ]
     )
 
 
@@ -50,23 +54,17 @@ async def duplicate_entry_error_handler(
     request: Request, exc: DuplicateEntryError
 ) -> JSONResponse:
     """Xử lý lỗi DuplicateEntryError tùy chỉnh, trả về 409."""
-    error_response = ModelResponse(
-        success=False,
-        error=ErrorResponse(
-            code="HTTP_409_CONFLICT",
-            message=exc.message,
-            details=[
-                ErrorDetail(
-                    loc=[exc.entity_name],
-                    msg=exc.message,
-                    type="duplicate_entry_error",
-                )
-            ],
-        ),
-    )
-    return JSONResponse(
+    return _create_error_json_response(
         status_code=status.HTTP_409_CONFLICT,
-        content=error_response.model_dump(exclude_none=True),
+        code="HTTP_409_CONFLICT",
+        message=exc.message,
+        details=[
+            ErrorDetail(
+                loc=[exc.entity_name],
+                msg=exc.message,
+                type="duplicate_entry_error",
+            )
+        ]
     )
 
 
@@ -74,21 +72,15 @@ async def application_error_handler(
     request: Request, exc: ApplicationError
 ) -> JSONResponse:
     """Xử lý các lỗi ApplicationError chung khác, trả về 400."""
-    error_response = ModelResponse(
-        success=False,
-        error=ErrorResponse(
-            code="HTTP_400_BAD_REQUEST",
-            message=exc.message,
-            details=[
-                ErrorDetail(
-                    loc=["application"], msg=exc.message, type="application_error"
-                )
-            ],
-        ),
-    )
-    return JSONResponse(
+    return _create_error_json_response(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content=error_response.model_dump(exclude_none=True),
+        code="HTTP_400_BAD_REQUEST",
+        message=exc.message,
+        details=[
+            ErrorDetail(
+                loc=["application"], msg=exc.message, type="application_error"
+            )
+        ]
     )
 
 
@@ -99,23 +91,17 @@ async def integrity_error_handler(
 ) -> JSONResponse:
     """Xử lý lỗi IntegrityError, trả về 400 (thường do vi phạm ràng buộc)."""
     logger.warning(f"IntegrityError on request {request.url.path}: {exc}")
-    error_response = ModelResponse(
-        success=False,
-        error=ErrorResponse(
-            code="HTTP_400_BAD_REQUEST",
-            message=messages.DatabaseError.INTEGRITY_ERROR,
-            details=[
-                ErrorDetail(
-                    loc=["database", "integrity"],
-                    msg=str(exc.orig), # Lấy thông điệp lỗi gốc từ driver DB
-                    type="integrity_error",
-                )
-            ],
-        ),
-    )
-    return JSONResponse(
+    return _create_error_json_response(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content=error_response.model_dump(exclude_none=True),
+        code="HTTP_400_BAD_REQUEST",
+        message=messages.DatabaseError.INTEGRITY_ERROR,
+        details=[
+            ErrorDetail(
+                loc=["database", "integrity"],
+                msg=str(exc.orig),
+                type="integrity_error",
+            )
+        ]
     )
 
 
@@ -125,17 +111,11 @@ async def sqlalchemy_error_handler(
     """Xử lý các lỗi SQLAlchemy chung khác, trả về 503 (Dịch vụ không sẵn sàng)."""
     logger.error(f"SQLAlchemyError on request {request.url.path}: {exc}")
     logger.error(traceback.format_exc())
-    error_response = ModelResponse(
-        success=False,
-        error=ErrorResponse(
-            code="HTTP_503_SERVICE_UNAVAILABLE",
-            message="Đã có lỗi xảy ra với hệ thống cơ sở dữ liệu. Vui lòng thử lại sau.",
-            details=None,  # Không lộ chi tiết lỗi DB cho client
-        ),
-    )
-    return JSONResponse(
+    return _create_error_json_response(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        content=error_response.model_dump(exclude_none=True),
+        code="HTTP_503_SERVICE_UNAVAILABLE",
+        message="Đã có lỗi xảy ra với hệ thống cơ sở dữ liệu. Vui lòng thử lại sau.",
+        details=None
     )
 
 
@@ -145,23 +125,19 @@ async def http_exception_handler(
     request: Request, exc: HTTPException
 ) -> JSONResponse:
     """Xử lý các lỗi HTTPException của FastAPI."""
-    error_response = ModelResponse(
-        success=False,
-        error=ErrorResponse(
-            code=f"HTTP_{exc.status_code}",
-            message=str(exc.detail),
-            details=[
-                ErrorDetail(
-                    loc=["http"], msg=str(exc.detail), type="http_exception"
-                )
-            ],
-        ),
-    )
-    return JSONResponse(
+    response = _create_error_json_response(
         status_code=exc.status_code,
-        content=error_response.model_dump(exclude_none=True),
-        headers=exc.headers,
+        code=f"HTTP_{exc.status_code}",
+        message=str(exc.detail),
+        details=[
+            ErrorDetail(
+                loc=["http"], msg=str(exc.detail), type="http_exception"
+            )
+        ]
     )
+    if exc.headers:
+        response.headers.update(exc.headers)
+    return response
 
 
 async def validation_exception_handler(
@@ -176,17 +152,11 @@ async def validation_exception_handler(
             )
         )
 
-    error_response = ModelResponse(
-        success=False,
-        error=ErrorResponse(
-            code="HTTP_422_UNPROCESSABLE_ENTITY",
-            message="Dữ liệu không hợp lệ.",
-            details=details,
-        ),
-    )
-    return JSONResponse(
+    return _create_error_json_response(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=error_response.model_dump(exclude_none=True),
+        code="HTTP_422_UNPROCESSABLE_ENTITY",
+        message="Dữ liệu không hợp lệ.",
+        details=details
     )
 
 
@@ -196,15 +166,9 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     """Xử lý tất cả các lỗi không được xử lý khác, trả về 500."""
     logger.error(f"Unhandled exception for request {request.url.path}: {exc}")
     logger.error(traceback.format_exc())
-    error_response = ModelResponse(
-        success=False,
-        error=ErrorResponse(
-            code="HTTP_500_INTERNAL_SERVER_ERROR",
-            message="Đã xảy ra lỗi hệ thống không mong muốn. Vui lòng liên hệ quản trị viên.",
-            details=None,
-        ),
-    )
-    return JSONResponse(
+    return _create_error_json_response(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=error_response.model_dump(exclude_none=True),
+        code="HTTP_500_INTERNAL_SERVER_ERROR",
+        message="Đã xảy ra lỗi hệ thống không mong muốn. Vui lòng liên hệ quản trị viên.",
+        details=None
     )

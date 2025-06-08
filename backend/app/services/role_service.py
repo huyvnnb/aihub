@@ -14,11 +14,11 @@ class RoleService:
 
     async def create_role(self, role_in: RoleCreate) -> RoleResponse:
         existing_role = await self.role_repo.get_role_by_name(role_in.name)
-        if existing_role:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=messages.Role.ROLE_ALREADY_EXISTS.format(role_name=role_in.name)
-            )
+        # if existing_role:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail=messages.Role.ROLE_ALREADY_EXISTS.format(role_name=role_in.name)
+        #     )
         role = Role(**role_in.model_dump())
         await self.role_repo.create(role)
 

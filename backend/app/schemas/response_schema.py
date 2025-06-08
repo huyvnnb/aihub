@@ -19,7 +19,7 @@ class ErrorDetail(BaseModel):
 
 class ErrorResponse(BaseModel):
     code: str = Field(..., description="Mã lỗi nội bộ hoặc chung")
-    message: str = Field(..., description="Thông báo lỗi tổng quan cho người dùng")
+    message: Optional[str] = Field(None, description="Thông báo lỗi tổng quan cho người dùng")
     details: Optional[List[ErrorDetail]] = Field(None, description="Chi tiết lỗi cụ thể (thường cho validation)")
 
     model_config = {

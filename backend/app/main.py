@@ -3,6 +3,7 @@ import time
 
 import sentry_sdk
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from starlette.middleware.cors import CORSMiddleware
@@ -10,8 +11,10 @@ from starlette.staticfiles import StaticFiles
 
 from app.api.main import api_router
 from app.core.config import settings
+from app.core.exceptions import NotFoundError, DuplicateEntryError, ApplicationError
 from app.utils.handlers import http_exception_handler, general_exception_handler, integrity_error_handler, \
-    sqlalchemy_error_handler
+    sqlalchemy_error_handler, not_found_error_handler, duplicate_entry_error_handler, application_error_handler, \
+    validation_exception_handler
 from app.utils.logger import get_logger, Module
 
 logger = get_logger(Module.APP)
@@ -35,9 +38,13 @@ app = FastAPI(
 async def startup_event():
     logger.info("Docs: http://127.0.0.1:8000/docs")
 
-app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(NotFoundError, not_found_error_handler)
+app.add_exception_handler(DuplicateEntryError, duplicate_entry_error_handler)
+app.add_exception_handler(ApplicationError, application_error_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(IntegrityError, integrity_error_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_error_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
 # Set all CORS enabled origins

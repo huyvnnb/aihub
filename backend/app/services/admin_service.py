@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette import status
 
+from app.core.exceptions import NotFoundError
 from app.db.repositories.role_repository import RoleRepository
 from app.db.repositories.user_repository import UserRepository
 from app.schemas.response_schema import PaginationMeta, Pagination, PaginationParams
@@ -20,9 +21,9 @@ class AdminService:
     async def get_user(self, id: UUID) -> UserResponse:
         existing_user = await self.user_repo.get_by_id(id)
         if not existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=messages.User.USER_NOT_FOUND
+            raise NotFoundError(
+                entity_name="USER",
+                entity_id=id
             )
         role = await self.role_repo.get_by_id(existing_user.role_id)
         if not role:
