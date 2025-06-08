@@ -24,7 +24,7 @@ class PermissionService:
         await self.perm_repo.create(perm)
 
     async def get_perm_by_id(self, perm_id: int):
-        existing_perm = await self.perm_repo.get_perm_by_id(perm_id)
+        existing_perm = await self.perm_repo.get_by_id(perm_id)
         if not existing_perm:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

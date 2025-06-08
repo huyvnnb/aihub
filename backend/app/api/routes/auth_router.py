@@ -1,7 +1,10 @@
 from types import NoneType
 
 from fastapi import APIRouter, status, Depends, BackgroundTasks, Request
+from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.api.deps import AsyncSessionDep
+from app.core.db import get_session
 from app.schemas.auth_schema import RegisterRequest, LoginResponse, LoginRequest, VerifyRequest, ResendRequest, \
     EmailRequest
 from app.schemas.response_schema import ModelResponse
@@ -21,8 +24,9 @@ router = APIRouter(
     response_model=ModelResponse[NoneType],
     response_model_exclude_none=True
 )
-async def register(user_data: RegisterRequest, background_tasks: BackgroundTasks, auth_service: AuthService = Depends()):
-    auth_service.register(user_data, background_tasks)
+async def register(user_data: RegisterRequest, background_tasks: BackgroundTasks, session: AsyncSession = Depends(get_session)):
+    auth_service = AuthService(session)
+    await auth_service.register(user_data, background_tasks)
     return ModelResponse(
         message=messages.Auth.REGISTRATION_SUCCESS
     )
@@ -34,8 +38,9 @@ async def register(user_data: RegisterRequest, background_tasks: BackgroundTasks
     response_model=ModelResponse[LoginResponse],
     response_model_exclude_none=True
 )
-async def login(request: Request, login: LoginRequest, auth_service: AuthService = Depends()) :
-    response = auth_service.login(login, request)
+async def login(request: Request, login: LoginRequest, session: AsyncSession = Depends(get_session)) :
+    auth_service = AuthService(session)
+    response = await auth_service.login(login, request)
     return ModelResponse(
         message=messages.Auth.LOGIN_SUCCESS,
         data=response
@@ -48,8 +53,9 @@ async def login(request: Request, login: LoginRequest, auth_service: AuthService
     response_model=ModelResponse[NoneType],
     response_model_exclude_none=True
 )
-async def verify_account(verify: VerifyRequest, auth_service: AuthService = Depends()):
-    auth_service.verify_account(verify)
+async def verify_account(verify: VerifyRequest, session: AsyncSessionDep):
+    auth_service = AuthService(session)
+    await auth_service.verify_account(verify)
     return ModelResponse(
         message=messages.Auth.EMAIL_VERIFICATION_SUCCESS
     )
@@ -61,9 +67,10 @@ async def verify_account(verify: VerifyRequest, auth_service: AuthService = Depe
     response_model=ModelResponse[NoneType],
     response_model_exclude_none=True
 )
-async def resend_verify_email(resend: EmailRequest, background_tasks: BackgroundTasks, auth_service: AuthService = Depends()):
+async def resend_verify_email(resend: EmailRequest, background_tasks: BackgroundTasks, session: AsyncSessionDep):
     subject = "Verify Your Account"
-    auth_service.resend_email(resend, subject, background_tasks)
+    auth_service = AuthService(session)
+    await auth_service.resend_email(resend, subject, background_tasks)
     return ModelResponse(
         message=messages.Auth.VERIFICATION_EMAIL_SENT
     )

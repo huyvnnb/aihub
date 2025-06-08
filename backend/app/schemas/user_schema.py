@@ -60,18 +60,18 @@ class UserResponse(BaseModel):
         "from_attributes": True
     }
 
-    @classmethod
-    def from_orm(cls, obj):
-        return cls(
-            id=obj.id,
-            email=obj.email,
-            fullname=obj.fullname,
-            dob=obj.dob,
-            address=obj.address,
-            avatar=obj.avatar,
-            gender=obj.gender,
-            verified=obj.verified,
-            role=obj.role.name if obj.role else "N/A",
-            created_at=obj.created_at,
-            updated_at=obj.updated_at
-        )
+    # @classmethod
+    # def from_orm(cls, obj):
+    #     return cls(
+    #         id=obj.id,
+    #         email=obj.email,
+    #         fullname=obj.fullname,
+    #         dob=obj.dob,
+    #         address=obj.address,
+    #         avatar=obj.avatar,
+    #         gender=obj.gender,
+    #         verified=obj.verified,
+    #         role=obj.role.name if obj.role else "N/A",
+    #         created_at=obj.created_at,
+    #         updated_at=obj.updated_at
+    #     )

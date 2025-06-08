@@ -116,6 +116,28 @@ class DatabaseError:
     OPERATIONAL_ERROR = "Operational error in database: {detail}"
 
 
+class ErrorMessages:
+    """
+    Một namespace tập trung cho các thông điệp lỗi của ứng dụng.
+    """
+    # Lỗi chung
+    UNEXPECTED_ERROR = "An unexpected error occurred. Please contact support."
+
+    # Lỗi liên quan đến xác thực và quyền
+    AUTHENTICATION_FAILED = "Authentication failed. Invalid credentials provided."
+    PERMISSION_DENIED = "You do not have permission to perform this action."
+    TOKEN_EXPIRED = "Session token has expired. Please log in again."
+    TOKEN_INVALID = "Invalid or malformed token."
+
+    # Lỗi liên quan đến tài nguyên (Resource)
+    ENTRY_NOT_FOUND = "{entity_name} with id/key '{entity_id}' not found."
+    DUPLICATE_ENTRY = "{entity_name} with conflicting fields already exists."
+
+    # Lỗi validation
+    FIELD_REQUIRED = "Field '{field_name}' is required."
+    INVALID_EMAIL_FORMAT = "The email address provided is not in a valid format."
+
+
 # --- Generic placeholders / Helper functions ---
 def item_created(item_name: str) -> str:
     return f"{item_name.capitalize()} created successfully."

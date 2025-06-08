@@ -2,13 +2,14 @@ from datetime import datetime, timezone, timedelta
 
 from fastapi import Depends, HTTPException, status, BackgroundTasks, Request
 from pydantic import EmailStr
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.config import settings
 from app.core.security import get_password_hash, get_token_hash, verify_password, verify_token
 from app.db.models import User, RFToken
-from app.db.repositories.rftoken_repository import RFTokenRepository, get_rftoken_repo
-from app.db.repositories.role_repository import RoleRepository, get_role_repo
-from app.db.repositories.user_repository import UserRepository, get_user_repo
+from app.db.repositories.rftoken_repository import RFTokenRepository
+from app.db.repositories.role_repository import RoleRepository
+from app.db.repositories.user_repository import UserRepository
 from app.schemas.auth_schema import RegisterRequest, LoginRequest, VerifyRequest, LoginResponse, EmailRequest
 from app.utils import messages
 from app.utils.constants import DEFAULT_ROLE
@@ -18,18 +19,13 @@ from app.utils.token_utils import generate_token, generate_jwt_token, get_client
 
 
 class AuthService:
-    def __init__(
-        self,
-        user_repo: UserRepository = Depends(get_user_repo),
-        role_repo: RoleRepository = Depends(get_role_repo),
-        rftoken_repo: RFTokenRepository = Depends(get_rftoken_repo)
-    ):
-        self.user_repo = user_repo
-        self.role_repo = role_repo
-        self.rftoken_repo = rftoken_repo
+    def __init__(self, session: AsyncSession):
+        self.user_repo = UserRepository(session)
+        self.role_repo = RoleRepository(session)
+        self.rftoken_repo = RFTokenRepository(session)
 
-    def register(self, user_in: RegisterRequest, background_tasks: BackgroundTasks) -> None:
-        existing_user = self.user_repo.get_user_by_email(user_in.email)
+    async def register(self, user_in: RegisterRequest, background_tasks: BackgroundTasks) -> None:
+        existing_user = await self.user_repo.get_user_by_email(user_in.email)
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -37,7 +33,7 @@ class AuthService:
             )
         user_data = user_in.model_dump(exclude={"password"})
         password_hash = get_password_hash(user_in.password)
-        existing_role = self.role_repo.get_role_by_name(DEFAULT_ROLE)
+        existing_role = await self.role_repo.get_role_by_name(DEFAULT_ROLE)
         if not existing_role:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -52,7 +48,7 @@ class AuthService:
             verify_token=hashed_token,
             verify_token_expire=datetime.now(timezone.utc) + timedelta(seconds=settings.VERIFY_TOKEN_EXPIRES)
         )
-        self.user_repo.create(user)
+        await self.user_repo.create(user)
 
         # Context data
         subject = "Verify Your Account"
@@ -69,8 +65,8 @@ class AuthService:
             send_email, user.email, subject, EmailType.VERIFY_ACCOUNT.value, email_context
         )
 
-    def login(self, login: LoginRequest, request: Request) -> LoginResponse:
-        existing_user = self.user_repo.get_user_by_email(login.email)
+    async def login(self, login: LoginRequest, request: Request) -> LoginResponse:
+        existing_user = await self.user_repo.get_user_by_email(login.email)
         if not existing_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -100,14 +96,14 @@ class AuthService:
             ip_address=ip,
             user_agent=user_agent,
         )
-        self.rftoken_repo.create(save_token)
+        await self.rftoken_repo.create(save_token)
         return LoginResponse(
             refresh_token=refresh_token,
             access_token=access_token
         )
 
-    def verify_account(self, verify: VerifyRequest):
-        existing_user = self.user_repo.get_user_by_email(verify.email)
+    async def verify_account(self, verify: VerifyRequest):
+        existing_user = await self.user_repo.get_user_by_email(verify.email)
         if not existing_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -122,11 +118,11 @@ class AuthService:
         existing_user.verified = True
         existing_user.verify_token = None
         existing_user.verify_token_expire = None
-        self.user_repo.update(existing_user)
+        await self.user_repo.update(existing_user)
 
-    def resend_email(self, email_request: EmailRequest, subject: str, background_tasks: BackgroundTasks):
+    async def resend_email(self, email_request: EmailRequest, subject: str, background_tasks: BackgroundTasks):
         email = email_request.email
-        existing_user = self.user_repo.get_user_by_email(email)
+        existing_user = await self.user_repo.get_user_by_email(email)
         if not existing_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -142,7 +138,7 @@ class AuthService:
         token_hash = get_token_hash(token)
         existing_user.verify_token = token_hash
         existing_user.verify_token_expire = datetime.now(timezone.utc) + timedelta(seconds=settings.VERIFY_TOKEN_EXPIRES)
-        self.user_repo.update(existing_user)
+        await self.user_repo.update(existing_user)
 
         app_name = settings.PROJECT_NAME
         website_url = settings.PROJECT_URL

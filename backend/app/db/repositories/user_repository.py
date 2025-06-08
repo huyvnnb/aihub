@@ -4,56 +4,47 @@ from uuid import UUID
 
 from fastapi import Depends
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.api.deps import SessionDep, get_db
 from app.db.models import User, Role
+from app.db.repositories.base_repository import BaseRepository
 from app.utils.logger import get_logger, Module
 
 logger = get_logger(Module.USER_REPO)
 
 
-class UserRepository:
-    def __init__(self, db: Session):
-        self.db = db
+class UserRepository(BaseRepository[User]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(User, session)
 
-    def get_user(self, user_id: UUID) -> Optional[User]:
-        statement = select(User).where(
-            User.id == user_id, User.deleted == False
-        )
-        return self.db.exec(statement).first()
-
-    def get_user_by_email(self, email: str) -> Optional[User]:
+    async def get_user_by_email(self, email: str) -> Optional[User]:
         statement = select(User).where(
             User.email == email, User.deleted == False
         )
-        return self.db.exec(statement).first()
+        user = await self.session.execute(statement)
+        return user.scalars().first()
 
-    def create(self, user: User):
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
-        return user
-
-    def get_all_users(self, offset: int, size: int):
+    async def get_all_users(self, offset: int, size: int):
         statement = (
-            select(User)
-            .join(Role)
-            .where(User.deleted.is_(False))
+            select(User, Role.name.label("role"))
+            .join(Role, User.role_id == Role.id)
+            .order_by(User.created_at.desc())
             .offset(offset)
             .limit(size)
         )
+        count_stmt = select(func.count()).select_from(User).where(User.deleted.is_(False))
 
-        users = self.db.exec(statement).all()
-        count_stmt = select(func.count()).select_from(User).where(User.deleted == False)
-        total_items = self.db.exec(count_stmt).one()
+        user_result = await self.session.execute(statement)
+        count_result = await self.session.execute(count_stmt)
+
+        users = user_result.all()
+        total_items = count_result.scalar_one()
 
         return users, total_items
 
-    def update(self, user: User):
-        self.db.commit()
-        self.db.refresh(user)
 
-
-def get_user_repo(db: Session = Depends(get_db)) -> UserRepository:
-    return UserRepository(db=db)
+# def get_user_repo(db: Session = Depends(get_db)) -> UserRepository:
+#     return UserRepository(session=db)

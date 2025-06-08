@@ -1,20 +1,15 @@
 from fastapi import Depends
 from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.api.deps import get_db
 from app.db.models import RFToken
+from app.db.repositories.base_repository import BaseRepository
 
 
-class RFTokenRepository:
-    def __init__(self, db: Session):
-        self.db = db
-
-    def create(self, token: RFToken):
-        self.db.add(token)
-        self.db.commit()
-        self.db.refresh(token)
+class RFTokenRepository(BaseRepository[RFToken]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(RFToken, session)
 
 
-def get_rftoken_repo(db: Session = Depends(get_db)) -> RFTokenRepository:
-    return RFTokenRepository(db=db)
 

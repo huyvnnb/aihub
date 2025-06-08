@@ -35,3 +35,6 @@ class Module(str, Enum):
 
     # Util
     TOKEN_UTIL = "TOKEN"
+
+    # Exception
+    EXCEPTION = "EXCEPTION"

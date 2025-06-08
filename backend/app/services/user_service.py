@@ -1,17 +1,15 @@
 from uuid import UUID
 
 from fastapi import Depends, HTTPException
+from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette import status
 
-from app.db.repositories.role_repository import RoleRepository, get_role_repo
-from app.db.repositories.user_repository import UserRepository, get_user_repo
+from app.db.repositories.role_repository import RoleRepository
+from app.db.repositories.user_repository import UserRepository
 from app.schemas.user_schema import UserResponse
 
 
 class UserService:
-    def __init__(self,
-                 user_repo: UserRepository = Depends(get_user_repo),
-                 role_repo: RoleRepository = Depends(get_role_repo)
-                 ):
-        self.user_repo = user_repo
-        self.role_repo = role_repo
+    def __init__(self, session: AsyncSession):
+        self.user_repo = UserRepository(session)
+        self.role_repo = RoleRepository(session)
