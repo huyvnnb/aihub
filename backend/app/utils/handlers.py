@@ -42,7 +42,6 @@ async def not_found_error_handler(request: Request, exc: NotFoundError) -> JSONR
         message=exc.message,
         details=[
             ErrorDetail(
-                loc=[exc.entity_name, str(exc.entity_id)],
                 msg=exc.message,
                 type="not_found_error",
             )
@@ -60,7 +59,6 @@ async def duplicate_entry_error_handler(
         message=exc.message,
         details=[
             ErrorDetail(
-                loc=[exc.entity_name],
                 msg=exc.message,
                 type="duplicate_entry_error",
             )

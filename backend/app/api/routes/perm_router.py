@@ -38,7 +38,7 @@ async def create_perm(perm_in: PermCreate, session: AsyncSessionDep):
     response_model=ModelResponse[PermResponse],
     response_model_exclude_none=True
 )
-async def get_perm_by_id(id: int, session: AsyncSession = Depends(get_session)):
+async def get_perm_by_id(id: int, session: AsyncSessionDep):
     perm_service = PermissionService(session)
     response = await perm_service.get_perm_by_id(id)
 

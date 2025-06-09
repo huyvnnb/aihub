@@ -1,10 +1,11 @@
+import asyncio
 from datetime import datetime, timezone, timedelta
 
-from fastapi import Depends, HTTPException, status, BackgroundTasks, Request
-from pydantic import EmailStr
+from fastapi import HTTPException, status, BackgroundTasks, Request
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.config import settings
+from app.core.exceptions import NotFoundError, DuplicateEntryError
 from app.core.security import get_password_hash, get_token_hash, verify_password, verify_token
 from app.db.models import User, RFToken
 from app.db.repositories.rftoken_repository import RFTokenRepository
@@ -27,20 +28,15 @@ class AuthService:
     async def register(self, user_in: RegisterRequest, background_tasks: BackgroundTasks) -> None:
         existing_user = await self.user_repo.get_user_by_email(user_in.email)
         if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=messages.User.EMAIL_ALREADY_EXISTS
-            )
+            raise DuplicateEntryError(messages.User.EMAIL_ALREADY_EXISTS)
+
         user_data = user_in.model_dump(exclude={"password"})
-        password_hash = get_password_hash(user_in.password)
+        password_hash = await get_password_hash(user_in.password)
         existing_role = await self.role_repo.get_role_by_name(DEFAULT_ROLE)
-        if not existing_role:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=messages.Role.ROLE_NOT_FOUND
-            )
-        token = generate_token()
-        hashed_token = get_token_hash(token)
+        # if not existing_role:
+        #     # raise SystemConfigurationError(...)
+        token = await generate_token()
+        hashed_token = await get_token_hash(token)
         user = User(
             **user_data,
             password_hash=password_hash,
@@ -68,11 +64,8 @@ class AuthService:
     async def login(self, login: LoginRequest, request: Request) -> LoginResponse:
         existing_user = await self.user_repo.get_user_by_email(login.email)
         if not existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=messages.User.EMAIL_NOT_EXISTS
-            )
-        match = verify_password(login.password, existing_user.password_hash)
+            raise NotFoundError(messages.User.USER_NOT_FOUND)
+        match = await verify_password(login.password, existing_user.password_hash)
         if not match:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -85,12 +78,16 @@ class AuthService:
                 detail=messages.Auth.ACCOUNT_NOT_YET_ACTIVE
             )
 
-        refresh_token = generate_jwt_token(existing_user.id, settings.REFRESH_TOKEN_EXPIRES)
-        access_token = generate_jwt_token(existing_user.id, settings.ACCESS_TOKEN_EXPIRES)
-        token_hash = get_token_hash(refresh_token)
+        refresh_token_task = generate_jwt_token(existing_user.id, settings.REFRESH_TOKEN_EXPIRES)
+        access_token_task = generate_jwt_token(existing_user.id, settings.ACCESS_TOKEN_EXPIRES)
+        refresh_token, access_token = await asyncio.gather(
+            refresh_token_task,
+            access_token_task
+        )
+        token_hash = await get_token_hash(refresh_token)
         ip, user_agent = get_client_meta(request)
         save_token = RFToken(
-            user_id= existing_user.id,
+            user_id=existing_user.id,
             token_hash=token_hash,
             expires_at=datetime.now(timezone.utc) + timedelta(seconds=settings.REFRESH_TOKEN_EXPIRES),
             ip_address=ip,
@@ -105,11 +102,9 @@ class AuthService:
     async def verify_account(self, verify: VerifyRequest):
         existing_user = await self.user_repo.get_user_by_email(verify.email)
         if not existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=messages.User.EMAIL_NOT_EXISTS
-            )
-        match = verify_token(verify.token, existing_user.verify_token)
+            raise NotFoundError(messages.User.USER_NOT_FOUND)
+
+        match = await verify_token(verify.token, existing_user.verify_token)
         if not match:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -124,20 +119,20 @@ class AuthService:
         email = email_request.email
         existing_user = await self.user_repo.get_user_by_email(email)
         if not existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=messages.User.EMAIL_NOT_EXISTS
-            )
+            raise NotFoundError(messages.User.USER_NOT_FOUND)
+
         if existing_user.verified:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=messages.Auth.EMAIL_ALREADY_VERIFIED
             )
 
-        token = generate_token()
-        token_hash = get_token_hash(token)
+        token = await generate_token()
+        token_hash = await get_token_hash(token)
         existing_user.verify_token = token_hash
-        existing_user.verify_token_expire = datetime.now(timezone.utc) + timedelta(seconds=settings.VERIFY_TOKEN_EXPIRES)
+        existing_user.verify_token_expire = (
+                datetime.now(timezone.utc) + timedelta(seconds=settings.VERIFY_TOKEN_EXPIRES)
+        )
         await self.user_repo.update(existing_user)
 
         app_name = settings.PROJECT_NAME
@@ -153,5 +148,28 @@ class AuthService:
             send_email, email, subject, EmailType.VERIFY_ACCOUNT.value, email_context
         )
 
+    # Optimize login
 
-
+    # async def process_refresh_token() -> tuple[str, RFToken]:
+    #     # a. Tạo RFT
+    #     rft = await generate_jwt_token(existing_user.id, settings.REFRESH_TOKEN_EXPIRES)
+    #     # b. Hash RFT
+    #     rft_hash = await get_token_hash(rft)
+    #     # c. Chuẩn bị đối tượng để lưu
+    #     ip, user_agent = get_client_meta(request)
+    #     save_token_obj = RFToken(
+    #         user_id=existing_user.id,
+    #         token_hash=rft_hash,
+    #         expires_at=datetime.now(timezone.utc) + timedelta(seconds=settings.REFRESH_TOKEN_EXPIRES),
+    #         ip_address=ip,
+    #         user_agent=user_agent,
+    #     )
+    #     return rft, save_token_obj
+    #
+    # refresh_token_logic_task = process_refresh_token()
+    #
+    # # Chạy cả hai task chính đồng thời
+    # results = await asyncio.gather(
+    #     access_token_task,
+    #     refresh_token_logic_task
+    # )

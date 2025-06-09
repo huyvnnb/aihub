@@ -20,7 +20,7 @@ router = APIRouter(
              response_model=ModelResponse[RoleResponse],
              response_model_exclude_none=True
              )
-async def create_role(role_data: RoleCreate, session: AsyncSession = Depends(get_session)):
+async def create_role(role_data: RoleCreate, session: AsyncSessionDep):
     role_service = RoleService(session)
     response = await role_service.create_role(role_data)
     return ModelResponse(

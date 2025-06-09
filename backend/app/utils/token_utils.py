@@ -1,3 +1,4 @@
+import asyncio
 import secrets
 import string
 import uuid
@@ -15,27 +16,24 @@ from fastapi import Request
 logger = get_logger(Module.TOKEN_UTIL)
 
 
-def generate_jwt_token(user_id: uuid.UUID, expires_in: int) -> str:
+def _generate_jwt_token_sync(user_id: uuid.UUID, expires_in: int) -> str:
     delta = timedelta(seconds=expires_in)
     now = datetime.now(timezone.utc)
     expires = now + delta
-    exp = expires.timestamp()
 
     payload = {
-        "exp": expires.timestamp(),
-        "iat": now.timestamp(),
+        "exp": expires,  # pyjwt khuyến nghị dùng trực tiếp datetime object
+        "iat": now,
         "sub": str(user_id)
     }
-
-    encoded_jwt = jwt.encode(
+    return jwt.encode(
         payload,
         settings.SECRET_KEY,
         algorithm=security.ALGORITHM,
     )
-    return encoded_jwt
 
 
-def verify_jwt_token(token: str, private_key: str, leeway_seconds: int = 0) -> str | None:
+def _verify_jwt_token_sync(token: str, private_key: str, leeway_seconds: int = 0) -> str | None:
     try:
         decoded_token = jwt.decode(
             token,
@@ -44,18 +42,51 @@ def verify_jwt_token(token: str, private_key: str, leeway_seconds: int = 0) -> s
             leeway=timedelta(seconds=leeway_seconds)
         )
         return str(decoded_token["sub"])
-
     except ExpiredSignatureError:
         logger.error("Token expired")
+        return None
     except DecodeError:
         logger.error("Token is invalid")
+        return None
     except InvalidTokenError:
         logger.error("Invalid token")
+        return None
 
 
-def generate_token(length: int = 8) -> str:
+def _generate_token_sync(length: int = 8) -> str:
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
+
+
+# Async
+async def generate_jwt_token(user_id: uuid.UUID, expires_in: int) -> str:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        None,
+        _generate_jwt_token_sync,
+        user_id,
+        expires_in
+    )
+
+
+async def verify_jwt_token(token: str, private_key: str, leeway_seconds: int = 0) -> str | None:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        None,
+        _verify_jwt_token_sync,
+        token,
+        private_key,
+        leeway_seconds
+    )
+
+
+async def generate_token(length: int = 8) -> str:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        None,
+        _generate_token_sync,
+        length
+    )
 
 
 def get_client_meta(request: Request):

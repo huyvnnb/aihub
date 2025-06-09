@@ -1,9 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
-from starlette import status
 
 from app.core.exceptions import NotFoundError
 from app.db.repositories.role_repository import RoleRepository
@@ -21,16 +19,10 @@ class AdminService:
     async def get_user(self, id: UUID) -> UserResponse:
         existing_user = await self.user_repo.get_by_id(id)
         if not existing_user:
-            raise NotFoundError(
-                entity_name="USER",
-                entity_id=id
-            )
+            raise NotFoundError(messages.User.USER_NOT_FOUND)
         role = await self.role_repo.get_by_id(existing_user.role_id)
         if not role:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=messages.Role.ROLE_NOT_FOUND
-            )
+            raise NotFoundError(messages.Role.ROLE_NOT_FOUND)
 
         user_data = {
             "id": existing_user.id,
