@@ -52,10 +52,8 @@ class AuthService:
         website_url = settings.PROJECT_URL
         email_context = {
             "subject": subject,
-            "app_name": app_name,
             "user_email_placeholder": user_in.email,
             "token": token,
-            "website_url": website_url,
         }
         background_tasks.add_task(
             send_email, user.email, subject, EmailType.VERIFY_ACCOUNT.value, email_context

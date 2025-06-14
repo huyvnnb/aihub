@@ -1,3 +1,4 @@
+from typing import List
 from uuid import UUID
 
 from fastapi import Depends
@@ -17,6 +18,15 @@ class RoleRepository(BaseRepository[Role]):
         statement = select(Role).where(Role.name == name)
         role = await self.session.execute(statement)
         return role.scalars().first()
+
+    async def get_roles_by_names(self, names: List[str]) -> List[Role]:
+        if not names:
+            return []
+
+        stm = select(Role).where(Role.name.in_(names))
+        result = await self.session.execute(stm)
+
+        return result.scalars().all()
 
 
 

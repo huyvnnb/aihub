@@ -42,6 +42,7 @@ class Auth:
 # --- User Module Messages ---
 class User:
     CREATED_SUCCESS = "User created successfully."
+    CREATED_MANY_SUCCESS = "Created multiple users successfully."
     UPDATED_SUCCESS = "User profile updated successfully."
     DELETED_SUCCESS = "User account deleted successfully."
     FETCHED_SUCCESS = "User details retrieved successfully."
@@ -90,8 +91,9 @@ class Permission:
 
 # --- Admin Module Messages (Actions performed by an Admin, often on other entities) ---
 class Admin:
+    CREATE_USER = "Create user with role '{role_name}' successfully."
     FETCH_USER = "Fetch user successfully."
-    FETCH_USER_LIST = "Fetch user list successfully"
+    FETCH_USER_LIST = "Fetch user list successfully."
     USER_BANNED_SUCCESS = "User '{username}' has been successfully banned."
     USER_UNBANNED_SUCCESS = "User '{username}' has been successfully unbanned."
     USER_ROLE_UPDATED_SUCCESS = "Roles for user '{username}' updated successfully."

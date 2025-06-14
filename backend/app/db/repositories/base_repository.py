@@ -3,13 +3,16 @@
 from typing import TypeVar, Generic, Optional, Any, List
 
 from psycopg.errors import UniqueViolation
-from sqlalchemy import select
+from sqlalchemy import select, insert
 from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.exceptions import DuplicateEntryError, ApplicationError
+from app.utils.logger import get_logger, Module
 
 ModelType = TypeVar("ModelType")
+
+logger = get_logger(Module.BASE_REPO)
 
 
 class BaseRepository(Generic[ModelType]):
@@ -23,6 +26,25 @@ class BaseRepository(Generic[ModelType]):
             await self.session.commit()
             await self.session.refresh(instance)
             return instance
+        except IntegrityError as e:
+            await self.session.rollback()
+            orig = e.orig
+            if isinstance(orig, UniqueViolation):
+                raise DuplicateEntryError(f"Entry for {self.model.__name__} already exists.") from e
+            else:
+                raise e
+
+    async def create_many(self, instances: List[dict]) -> List[ModelType]:
+        if not instances:
+            return []
+
+        try:
+            stm = insert(self.model).values(instances).returning(self.model)
+            logger.info(stm)
+
+            result = await self.session.execute(stm)
+            await self.session.commit()
+            return result.scalars().all()
         except IntegrityError as e:
             await self.session.rollback()
             orig = e.orig

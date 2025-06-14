@@ -48,7 +48,7 @@ async def login(request: Request, login: LoginRequest, session: AsyncSession = D
 
 
 @router.post(
-    "/verify-account",
+    "/email/verify",
     status_code=status.HTTP_200_OK,
     response_model=ModelResponse[NoneType],
     response_model_exclude_none=True
@@ -62,7 +62,7 @@ async def verify_account(verify: VerifyRequest, session: AsyncSessionDep):
 
 
 @router.post(
-    "/resend-verify-account",
+    "/verify/resend",
     status_code=status.HTTP_200_OK,
     response_model=ModelResponse[NoneType],
     response_model_exclude_none=True
