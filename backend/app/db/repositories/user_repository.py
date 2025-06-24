@@ -1,14 +1,10 @@
 import logging
 from typing import Optional
-from uuid import UUID
 
-from fastapi import Depends
 from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, select
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.api.deps import SessionDep, get_db
 from app.db.models import User, Role
 from app.db.repositories.base_repository import BaseRepository
 from app.utils.logger import get_logger, Module

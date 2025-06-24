@@ -1,6 +1,7 @@
 from types import NoneType
 
-from fastapi import APIRouter, status, Depends, BackgroundTasks, Request
+from fastapi import APIRouter, status, Depends, BackgroundTasks, Request, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.api.deps import AsyncSessionDep
@@ -45,6 +46,18 @@ async def login(request: Request, login: LoginRequest, session: AsyncSession = D
         message=messages.Auth.LOGIN_SUCCESS,
         data=response
     )
+
+
+@router.post("/login/access-token")
+async def login_access_token(request: Request, session: AsyncSessionDep, form_data: OAuth2PasswordRequestForm = Depends()):
+    auth_service = AuthService(session)
+    token = await auth_service.oauth2_login(
+        LoginRequest(email=form_data.username, password=form_data.password), request
+    )
+    if not token:
+        raise HTTPException(status_code=400, detail="Something has occurred")
+
+    return {"access_token": token, "token_type": "bearer"}
 
 
 @router.post(

@@ -36,7 +36,8 @@ class Auth:
     MFA_DISABLED_SUCCESS = "Multi-Factor Authentication has been disabled."
     ACCOUNT_LOCKED = "Your account has been locked due to too many failed login attempts. Please try again later or reset your password."
     ACCOUNT_DISABLED = "Your account has been disabled. Please contact support."
-    ACCOUNT_NOT_YET_ACTIVE = "Your account is not yet active. Please verify your email first."
+    ACCOUNT_NOT_YET_ACTIVE = "Your account is not yet active. Please verify your email first.",
+    PERMISSION_DENIED = "Access denied. You do not have permission to perform this action."
 
 
 # --- User Module Messages ---

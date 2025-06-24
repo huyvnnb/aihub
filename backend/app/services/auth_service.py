@@ -48,8 +48,6 @@ class AuthService:
 
         # Context data
         subject = "Verify Your Account"
-        app_name = settings.PROJECT_NAME
-        website_url = settings.PROJECT_URL
         email_context = {
             "subject": subject,
             "user_email_placeholder": user_in.email,
@@ -96,6 +94,41 @@ class AuthService:
             refresh_token=refresh_token,
             access_token=access_token
         )
+
+    async def oauth2_login(self, login: LoginRequest, request: Request):
+        existing_user = await self.user_repo.get_user_by_email(login.email)
+        if not existing_user:
+            raise NotFoundError(messages.User.USER_NOT_FOUND)
+        match = await verify_password(login.password, existing_user.password_hash)
+        if not match:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=messages.Auth.LOGIN_FAILED
+            )
+
+        if not existing_user.verified:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=messages.Auth.ACCOUNT_NOT_YET_ACTIVE
+            )
+
+        refresh_token_task = generate_jwt_token(existing_user.id, settings.REFRESH_TOKEN_EXPIRES)
+        access_token_task = generate_jwt_token(existing_user.id, settings.ACCESS_TOKEN_EXPIRES)
+        refresh_token, access_token = await asyncio.gather(
+            refresh_token_task,
+            access_token_task
+        )
+        token_hash = await get_token_hash(refresh_token)
+        ip, user_agent = get_client_meta(request)
+        save_token = RFToken(
+            user_id=existing_user.id,
+            token_hash=token_hash,
+            expires_at=datetime.now(timezone.utc) + timedelta(seconds=settings.REFRESH_TOKEN_EXPIRES),
+            ip_address=ip,
+            user_agent=user_agent,
+        )
+        await self.rftoken_repo.create(save_token)
+        return access_token
 
     async def verify_account(self, verify: VerifyRequest):
         existing_user = await self.user_repo.get_user_by_email(verify.email)
@@ -145,6 +178,14 @@ class AuthService:
         background_tasks.add_task(
             send_email, email, subject, EmailType.VERIFY_ACCOUNT.value, email_context
         )
+
+    # async def forgot_password(self, request: EmailRequest):
+    #     existing_user = self.user_repo.get_user_by_email(request.email)
+    #     if not existing_user:
+    #         raise NotFoundError(messages.User.USER_NOT_FOUND)
+
+
+
 
     # Optimize login
 
