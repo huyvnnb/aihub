@@ -5,6 +5,12 @@ from enum import Enum
 DEFAULT_ROLE = Role.USER
 
 
+class Provider(str, Enum):
+    LOCAL = 'local'
+    FACEBOOK = 'facebook'
+    GOOGLE = 'google'
+
+
 class P(str, Enum):
     """
     Enum chứa các hằng số định danh cho các quyền (Permissions) trong hệ thống.

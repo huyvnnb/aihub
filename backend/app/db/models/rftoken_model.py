@@ -9,7 +9,7 @@ from app.db.models.base_model import CoreModel
 from sqlalchemy.dialects.postgresql import INET, TEXT
 
 if TYPE_CHECKING:
-    from .user_model import User
+    from .user_model import User, DeletedUser
 
 
 class RFToken(CoreModel, table=True):
