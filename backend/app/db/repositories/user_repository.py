@@ -2,10 +2,12 @@ import logging
 from typing import Optional
 
 from sqlalchemy import func
+from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db.models import User, Role
+from app.db.models.user_model import DeletedUser
 from app.db.repositories.base_repository import BaseRepository
 from app.utils.logger import get_logger, Module
 
@@ -18,7 +20,7 @@ class UserRepository(BaseRepository[User]):
 
     async def get_user_by_email(self, email: str) -> Optional[User]:
         statement = select(User).where(
-            User.email == email, User.deleted == False
+            User.email == email
         )
         user = await self.session.execute(statement)
         return user.scalars().first()
@@ -31,16 +33,26 @@ class UserRepository(BaseRepository[User]):
             .offset(offset)
             .limit(size)
         )
-        count_stmt = select(func.count()).select_from(User).where(User.deleted.is_(False))
+        count_stmt = select(func.count()).select_from(User)
 
-        user_result = await self.session.execute(statement)
-        count_result = await self.session.execute(count_stmt)
+        user_result = await self.session.exec(statement)
+        count_result = await self.session.exec(count_stmt)
 
         users = user_result.all()
-        total_items = count_result.scalar_one()
+        total_items = count_result.one_or_none()
 
         return users, total_items
 
+    async def get_user_by_token(self, token: str) -> User:
+        statement = select(User).where(User.verify_token == token)
+        user = await self.session.execute(statement)
+
+        return user.scalar_one_or_none()
+
+
+class DeletedUserRepository(BaseRepository[DeletedUser]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(DeletedUser, session)
 
 # def get_user_repo(db: Session = Depends(get_db)) -> UserRepository:
 #     return UserRepository(session=db)

@@ -9,13 +9,15 @@ from app.core.config import settings
 # from app.db.models import User, UserCreate
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
-async_engine = create_async_engine(str(settings.SQLALCHEMY_DATABASE_URI))
-AsyncSessionLocal = async_sessionmaker(async_engine, expire_on_commit=True)
+async_engine = create_async_engine(str(settings.SQLALCHEMY_DATABASE_URI), echo=True)
+AsyncSessionLocal = async_sessionmaker(async_engine, expire_on_commit=False, autoflush=False, autocommit=False)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         yield session
+
+
 
 # make sure all SQLModel models are imported (app.models) before initializing DB
 # otherwise, SQLModel might fail to initialize relationships properly

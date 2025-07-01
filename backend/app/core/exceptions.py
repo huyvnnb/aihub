@@ -5,9 +5,18 @@ from app.utils import messages
 
 
 class ApplicationError(Exception):
-    @property
-    def message(self):
-        return self.args[0]
+    def __init__(self, message: str, status_code: int = 400):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
+    # @property
+    # def message(self):
+    #     return self.args[0]
+
+
+class InvalidTokenError(ApplicationError):
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
 class SystemConfigError(ApplicationError):

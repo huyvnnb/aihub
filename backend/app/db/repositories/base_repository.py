@@ -22,40 +22,53 @@ class BaseRepository(Generic[ModelType]):
 
     async def create(self, instance: ModelType) -> ModelType:
         self.session.add(instance)
-        try:
-            await self.session.commit()
-            await self.session.refresh(instance)
-            return instance
-        except IntegrityError as e:
-            await self.session.rollback()
-            orig = e.orig
-            if isinstance(orig, UniqueViolation):
-                raise DuplicateEntryError(f"Entry for {self.model.__name__} already exists.") from e
-            else:
-                raise e
+        await self.session.flush()
+        await self.session.refresh(instance)
+        return instance
+        # try:
+        #     await self.session.commit()
+        #     await self.session.refresh(instance)
+        #     return instance
+        # except IntegrityError as e:
+        #     await self.session.rollback()
+        #     orig = e.orig
+        #     if isinstance(orig, UniqueViolation):
+        #         raise DuplicateEntryError(f"Entry for {self.model.__name__} already exists.") from e
+        #     else:
+        #         raise e
 
     async def create_many(self, instances: List[dict]) -> List[ModelType]:
         if not instances:
             return []
+        stm = insert(self.model).values(instances).returning(self.model)
+        result = await self.session.execute(stm)
+        return result.scalars().all()
+        # if not instances:
+        #     return []
+        #
+        # try:
+        #     stm = insert(self.model).values(instances).returning(self.model)
+        #     logger.info(stm)
+        #
+        #     result = await self.session.execute(stm)
+        #     await self.session.commit()
+        #     return result.scalars().all()
+        # except IntegrityError as e:
+        #     await self.session.rollback()
+        #     orig = e.orig
+        #     if isinstance(orig, UniqueViolation):
+        #         raise DuplicateEntryError(f"Entry for {self.model.__name__} already exists.") from e
+        #     else:
+        #         raise e
 
-        try:
-            stm = insert(self.model).values(instances).returning(self.model)
-            logger.info(stm)
+    async def get_by_id(self, instance_id: Any, load_options: Optional[List] = None) -> Optional[ModelType]:
+        query = select(self.model).where(self.model.id == instance_id)
+        if load_options:
+            query.options(*load_options)
 
-            result = await self.session.execute(stm)
-            await self.session.commit()
-            return result.scalars().all()
-        except IntegrityError as e:
-            await self.session.rollback()
-            orig = e.orig
-            if isinstance(orig, UniqueViolation):
-                raise DuplicateEntryError(f"Entry for {self.model.__name__} already exists.") from e
-            else:
-                raise e
-
-    async def get_by_id(self, instance_id: Any) -> Optional[ModelType]:
-        """Phương thức get_by_id chung."""
-        return await self.session.get(self.model, instance_id)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+        # return await self.session.get(self.model, instance_id)
 
     async def get_all(self, *, offset: int, size: int, order_by: Optional[Any] = None) -> List[ModelType]:
         query = select(self.model)
@@ -69,41 +82,31 @@ class BaseRepository(Generic[ModelType]):
 
     async def update(self, instance: ModelType):
         self.session.add(instance)
-        try:
-            await self.session.commit()
-            await self.session.refresh(instance)
-            return instance
-        except IntegrityError as e:
-            await self.session.rollback()
-            orig = e.orig
-            if isinstance(orig, UniqueViolation):
-                raise DuplicateEntryError(f"Update failed: entry for {self.model.__name__} already exists.") from e
-            else:
-                raise e
+        await self.session.flush()
+        await self.session.refresh(instance)
+        return instance
+        # self.session.add(instance)
+        # try:
+        #     await self.session.commit()
+        #     await self.session.refresh(instance)
+        #     return instance
+        # except IntegrityError as e:
+        #     await self.session.rollback()
+        #     orig = e.orig
+        #     if isinstance(orig, UniqueViolation):
+        #         raise DuplicateEntryError(f"Update failed: entry for {self.model.__name__} already exists.") from e
+        #     else:
+        #         raise e
 
-    async def soft_delete(self, instance_id: Any):
-        instance = await self.get_by_id(instance_id)
-        if not instance:
-            return False
-        if hasattr(instance, 'deleted'):
-            instance.deleted = True
-            self.session.add(instance)
-            try:
-                await self.session.commit()
-                return True
-            except IntegrityError as e:
-                await self.session.rollback()
-                orig = e.orig
-                if isinstance(orig, UniqueViolation):
-                    raise DuplicateEntryError(f"Delete failed: entry for {self.model.__name__} already exists.") from e
-                else:
-                    raise e
-
-    async def hard_delete(self, instance_id):
+    async def delete(self, instance_id):
         instance = await self.get_by_id(instance_id)
         if instance:
             await self.session.delete(instance)
-            await self.session.commit()
+            await self.session.flush()  # Để đảm bảo thao tác delete được đưa vào session
             return True
-
-
+        return False
+        # instance = await self.get_by_id(instance_id)
+        # if instance:
+        #     await self.session.delete(instance)
+        #     await self.session.commit()
+        #     return True

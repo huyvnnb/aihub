@@ -15,6 +15,7 @@ from app.db.repositories.user_repository import UserRepository
 from app.schemas.admin_schema import AdminUserCreate
 from app.schemas.response_schema import PaginationMeta, Pagination, PaginationParams
 from app.schemas.user_schema import UserResponse
+from app.services.unit_of_work import UnitOfWork
 from app.utils import messages
 from app.utils.email_service import send_email
 from app.utils.enums import EmailType
@@ -22,17 +23,15 @@ from app.utils.token_utils import generate_token
 
 
 class AdminService:
-    def __init__(self, session: AsyncSession):
-        self.user_repo = UserRepository(session)
-        self.role_repo = RoleRepository(session)
 
-    async def get_user(self, id: UUID) -> UserResponse:
-        existing_user = await self.user_repo.get_by_id(id)
-        if not existing_user:
-            raise NotFoundError(messages.User.USER_NOT_FOUND)
-        role = await self.role_repo.get_by_id(existing_user.role_id)
-        if not role:
-            raise NotFoundError(messages.Role.ROLE_NOT_FOUND)
+    async def get_user(self, uow: UnitOfWork, id: UUID) -> UserResponse:
+        async with uow:
+            existing_user = await uow.users.get_by_id(id)
+            if not existing_user:
+                raise NotFoundError(messages.User.USER_NOT_FOUND)
+            role = await uow.roles.get_by_id(existing_user.role_id)
+            if not role:
+                raise NotFoundError(messages.Role.ROLE_NOT_FOUND)
 
         user_data = {
             "id": existing_user.id,
@@ -51,11 +50,12 @@ class AdminService:
         response = UserResponse.model_validate(user_data)
         return response
 
-    async def get_all_users(self, params: PaginationParams) -> Pagination[List[UserResponse]]:
+    async def get_all_users(self, uow: UnitOfWork, params: PaginationParams) -> Pagination[List[UserResponse]]:
         offset = params.offset
         size = params.size
         page = params.page
-        users, total_items = await self.user_repo.get_all_users(offset, size)
+        async with uow:
+            users, total_items = await uow.users.get_all_users(offset, size)
 
         user_responses = [
             UserResponse(
@@ -76,26 +76,27 @@ class AdminService:
 
         return response
 
-    async def create_user(self, user_in: AdminUserCreate, background_tasks: BackgroundTasks):
-        existing_user = await self.user_repo.get_user_by_email(user_in.email)
-        if existing_user:
-            raise DuplicateEntryError(messages.User.EMAIL_ALREADY_EXISTS)
-        existing_role = await self.role_repo.get_role_by_name(user_in.role)
-        if not existing_role:
-            raise NotFoundError(messages.Role.ROLE_NOT_FOUND)
+    async def create_user(self, uow: UnitOfWork, user_in: AdminUserCreate, background_tasks: BackgroundTasks):
+        async with uow:
+            # existing_user = await self.user_repo.get_user_by_email(user_in.email)
+            # if existing_user:
+            #     raise DuplicateEntryError(messages.User.EMAIL_ALREADY_EXISTS)
+            existing_role = await uow.roles.get_role_by_name(user_in.role)
+            if not existing_role:
+                raise NotFoundError(messages.Role.ROLE_NOT_FOUND)
 
-        user_data = user_in.model_dump(exclude={"password", "role"})
-        password_hash = await get_password_hash(user_in.password)
-        token = await generate_token()
-        hashed_token = await get_token_hash(token)
-        user = User(
-            **user_data,
-            password_hash=password_hash,
-            role_id=existing_role.id,
-            verify_token=hashed_token,
-            verify_token_expire=datetime.now(timezone.utc) + timedelta(seconds=settings.VERIFY_TOKEN_EXPIRES)
-        )
-        await self.user_repo.create(user)
+            user_data = user_in.model_dump(exclude={"password", "role"})
+            password_hash = await get_password_hash(user_in.password)
+            token = await generate_token()
+            hashed_token = await get_token_hash(token)
+            user = User(
+                **user_data,
+                password_hash=password_hash,
+                role_id=existing_role.id,
+                verify_token=hashed_token,
+                verify_token_expire=datetime.now(timezone.utc) + timedelta(seconds=settings.VERIFY_TOKEN_EXPIRES)
+            )
+            await uow.users.create(user)
 
         # Context data
         subject = "Verify Your Account"
@@ -108,25 +109,29 @@ class AdminService:
             send_email, user.email, subject, EmailType.VERIFY_ACCOUNT.value, email_context
         )
 
-    async def create_many_user(self, user_list: List[AdminUserCreate], background_tasks: BackgroundTasks):
-        unique_role_names = {user.role for user in user_list}
-        role_list = await self.role_repo.get_roles_by_names(list(unique_role_names))
-        role_map = {role.name: role.id for role in role_list}
+    async def create_many_user(self, uow: UnitOfWork, user_list: List[AdminUserCreate], background_tasks: BackgroundTasks):
+        if not user_list:
+            return
 
-        for role_name in unique_role_names:
-            if role_name not in role_map:
-                raise NotFoundError(messages.Role.ROLE_NOT_FOUND)
+        async with uow:
+            unique_role_names = {user.role for user in user_list}
+            role_list = await uow.roles.get_roles_by_names(list(unique_role_names))
+            role_map = {role.name: role.id for role in role_list}
 
-        mapping_tasks = []
-        for user_in in user_list:
-            role_id = role_map[user_in.role]
-            task = self._map_user(user_in, role_id)
-            mapping_tasks.append(task)
+            for role_name in unique_role_names:
+                if role_name not in role_map:
+                    raise NotFoundError(messages.Role.ROLE_NOT_FOUND)
 
-        mapped_results = await asyncio.gather(*mapping_tasks)
-        users = [result[0] for result in mapped_results]
-        users_dict = [user.dict(exclude_unset=True) for user in users]
-        await self.user_repo.create_many(users_dict)
+            mapping_tasks = []
+            for user_in in user_list:
+                role_id = role_map[user_in.role]
+                task = self._map_user(user_in, role_id)
+                mapping_tasks.append(task)
+
+            mapped_results = await asyncio.gather(*mapping_tasks)
+            users = [result[0] for result in mapped_results]
+            users_dict = [user.dict(exclude_unset=True) for user in users]
+            await uow.users.create_many(users_dict)
 
         for user_model, raw_token in mapped_results:
             subject = "Verify Your Account"
@@ -158,6 +163,6 @@ class AdminService:
         return user, token
 
 
-
-
+def get_admin_service():
+    return AdminService()
 

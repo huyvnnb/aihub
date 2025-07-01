@@ -28,6 +28,9 @@ class Module(str, Enum):
     ADMIN_SERVICE = "ADMIN_SERVICE"
     ADMIN_ROUTER = "ADMIN_ROUTER"
 
+    # Auth
+    AUTH_SERVICE = "AUTH SERVICE"
+
     # Role
     ROLE_REPO = "ROLE_REPO"
     ROLE_SERVICE = "ROLE_SERVICE"

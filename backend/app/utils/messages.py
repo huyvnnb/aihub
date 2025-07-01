@@ -129,8 +129,8 @@ class ErrorMessages:
     # Lỗi liên quan đến xác thực và quyền
     AUTHENTICATION_FAILED = "Authentication failed. Invalid credentials provided."
     PERMISSION_DENIED = "You do not have permission to perform this action."
-    TOKEN_EXPIRED = "Session token has expired. Please log in again."
-    TOKEN_INVALID = "Invalid or malformed token."
+    TOKEN_EXPIRED = "Session token has expired. Please try again."
+    TOKEN_INVALID = "Invalid or expired token."
 
     # Lỗi liên quan đến tài nguyên (Resource)
     ENTRY_NOT_FOUND = "{entity_name} with id/key '{entity_id}' not found."

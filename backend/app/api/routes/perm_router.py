@@ -4,12 +4,13 @@ from fastapi import APIRouter, Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette import status
 
-from app.api.deps import AsyncSessionDep
+from app.api.deps import AsyncSessionDep, get_uow, require_permission
 from app.core.db import get_session
 from app.schemas.perm_schema import PermResponse, PermCreate
 from app.schemas.response_schema import ModelResponse
-from app.services.permission_service import PermissionService
+from app.services.permission_service import PermissionService, get_perm_service
 from app.utils import messages
+from app.utils.constants import P
 
 router = APIRouter(
     prefix="/permission",
@@ -23,9 +24,8 @@ router = APIRouter(
     response_model=ModelResponse[NoneType],
     response_model_exclude_none=True
 )
-async def create_perm(perm_in: PermCreate, session: AsyncSessionDep):
-    perm_service = PermissionService(session)
-    await perm_service.create_perm(perm_in)
+async def create_perm(perm_in: PermCreate, perm_service=Depends(get_perm_service), uow=Depends(get_uow)):
+    await perm_service.create_perm(uow, perm_in)
 
     return ModelResponse(
         message=messages.Permission.CREATED_SUCCESS.format(permission_name=perm_in.name)
@@ -36,11 +36,11 @@ async def create_perm(perm_in: PermCreate, session: AsyncSessionDep):
     "/{id}",
     status_code=status.HTTP_200_OK,
     response_model=ModelResponse[PermResponse],
-    response_model_exclude_none=True
+    response_model_exclude_none=True,
+    dependencies=[Depends(require_permission(P.USER_READ))]
 )
-async def get_perm_by_id(id: int, session: AsyncSessionDep):
-    perm_service = PermissionService(session)
-    response = await perm_service.get_perm_by_id(id)
+async def get_perm_by_id(id: int, perm_service=Depends(get_perm_service), uow=Depends(get_uow)):
+    response = await perm_service.get_perm_by_id(uow, id)
 
     return ModelResponse(
         message=messages.Permission.FETCHED_SUCCESS,

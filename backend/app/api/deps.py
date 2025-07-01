@@ -6,17 +6,20 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlmodel import Session
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core import security
 from app.core.config import settings
-from app.core.db import engine, get_session
+from app.core.db import engine, get_session, AsyncSessionLocal
 from app.core.exceptions import NotFoundError
 from app.db.models import User
 from app.db.repositories.permission_repository import PermissionRepository
+from app.db.repositories.role_repository import RoleRepository
 from app.db.repositories.user_repository import UserRepository
 from app.schemas.token_schema import TokenPayload
+from app.services.unit_of_work import UnitOfWork
 from app.utils import messages
 
 oauth2_scheme = OAuth2PasswordBearer(
@@ -68,11 +71,7 @@ def require_permission(perm_name: str):
             )
 
     return wrapper
-#
-#
-# def get_current_active_superuser(current_user: CurrentUser) -> User:
-#     if not current_user.is_superuser:
-#         raise HTTPException(
-#             status_code=403, detail="The user doesn't have enough privileges"
-#         )
-#     return current_user
+
+
+def get_uow() -> UnitOfWork:
+    return UnitOfWork(session_factory=AsyncSessionLocal)

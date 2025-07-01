@@ -96,7 +96,7 @@ async def integrity_error_handler(
         details=[
             ErrorDetail(
                 loc=["database", "integrity"],
-                msg=str(exc.orig),
+                msg="Dữ liệu không hợp lệ hoặc đã tồn tại",
                 type="integrity_error",
             )
         ]

@@ -5,7 +5,6 @@ from fastapi import Depends
 from sqlmodel import Session, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.api.deps import get_db
 from app.db.models import Role
 from app.db.repositories.base_repository import BaseRepository
 
