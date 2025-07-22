@@ -30,6 +30,9 @@ class Module(Enum):
     ROLE_SERVICE = "ROLE SERVICE"
     ROLE_ROUTER = "ROLE ROUTER"
 
+    # Tool
+    YOUTUBE = "YOUTUBE"
+
 
 class UvicornLikeFormatter(logging.Formatter):
     LEVEL_COLOR = {

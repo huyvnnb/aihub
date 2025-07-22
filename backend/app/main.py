@@ -1,4 +1,18 @@
-import logging
+import asyncio
+import sys
+from app.utils.logger import get_logger, Module
+
+
+logger = get_logger(Module.APP)
+
+# logger.info(f"[{__name__}] Script starting on platform: {sys.platform}")
+#
+# if sys.platform == "win32":
+#     logger.info(f"[{__name__}] Applying WindowsSelectorEventLoopPolicy...")
+#     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+#     logger.info(f"[{__name__}] Current event loop policy: {type(asyncio.get_event_loop_policy()).__name__}")
+
+
 import time
 
 import sentry_sdk
@@ -26,6 +40,7 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
     sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

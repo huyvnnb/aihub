@@ -111,6 +111,11 @@ class Admin:
     SYSTEM_HEALTH_CRITICAL = "System health check critical. Immediate attention required."
 
 
+class Tools:
+    GET_VIDEO_INFO_SUCCESS = "Get video information successfully."
+    DOWNLOAD_MP3_SUCCESS = "Download mp3 successfully."
+
+
 class DatabaseError:
     INTEGRITY_ERROR = "Integrity constraint violated: {detail}"
     CONNECTION_ERROR = "Database connection error: {detail}"
