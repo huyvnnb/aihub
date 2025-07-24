@@ -29,9 +29,6 @@ from app.core.exceptions import NotFoundError, DuplicateEntryError, ApplicationE
 from app.utils.handlers import http_exception_handler, general_exception_handler, integrity_error_handler, \
     sqlalchemy_error_handler, not_found_error_handler, duplicate_entry_error_handler, application_error_handler, \
     validation_exception_handler
-from app.utils.logger import get_logger, Module
-
-logger = get_logger(Module.APP)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
