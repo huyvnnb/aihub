@@ -33,6 +33,9 @@ class Module(Enum):
     # Tool
     YOUTUBE = "YOUTUBE"
 
+    # Chat
+    WEBSOCKET = "WEBSOCKET"
+
 
 class UvicornLikeFormatter(logging.Formatter):
     LEVEL_COLOR = {

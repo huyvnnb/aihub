@@ -23,7 +23,6 @@ from app.utils.token_utils import generate_token
 
 
 class AdminService:
-
     async def get_user(self, uow: UnitOfWork, id: UUID) -> UserResponse:
         async with uow:
             existing_user = await uow.users.get_by_id(id)

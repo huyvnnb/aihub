@@ -35,11 +35,11 @@ class UserRepository(BaseRepository[User]):
         )
         count_stmt = select(func.count()).select_from(User)
 
-        user_result = await self.session.exec(statement)
-        count_result = await self.session.exec(count_stmt)
+        user_result = await self.session.execute(statement)
+        count_result = await self.session.execute(count_stmt)
 
         users = user_result.all()
-        total_items = count_result.one_or_none()
+        total_items = count_result.scalar_one_or_none()
 
         return users, total_items
 
